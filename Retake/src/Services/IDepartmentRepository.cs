@@ -5,7 +5,7 @@ namespace WebApplication2.Services;
 
 public interface IDepartmentRepository
 { 
-    Task<IEnumerable<Department>> GetAll();
-    Department? GetById(int id);
+    Task<IEnumerable<GetDeptDto>> GetAll();
+    GetOneDeptDto? GetById(int id);
     bool AddDepartment(Department department);
 }

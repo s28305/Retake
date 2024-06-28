@@ -14,10 +14,11 @@ public class DepartmentRepository: IDepartmentRepository
 
     }
     
-    public async Task<IEnumerable<Department>> GetAll()
+    public async Task<IEnumerable<GetDeptDto>> GetAll()
     {
-        List<Department> departments = new();
+        List<GetDeptDto> departments = new();
         const string queryString = "SELECT * FROM Department";
+        const string employeeQuery = "SELECT * FROM Employees WHERE DepID = @DepID";
         await using SqlConnection connection = new(_connectionString);
         SqlCommand command = new(queryString, connection);
         connection.Open();
@@ -28,9 +29,10 @@ public class DepartmentRepository: IDepartmentRepository
             {
                 while (reader.Read()) 
                 {
-                    var department = new Department {
-                        DepName = reader.GetString(1),
-                        DepLocation = reader.GetString(1)
+                    var department = new GetDeptDto {
+                        Id = reader.GetInt32(0),
+                        Name = reader.GetString(1),
+                        Location = reader.GetString(2)
                     };
                     departments.Add(department);
                 }
@@ -40,13 +42,45 @@ public class DepartmentRepository: IDepartmentRepository
         {
             reader.Close();
         }
+        
+        foreach (var department in departments)
+        {
+            var employeeCommand = new SqlCommand(employeeQuery, connection);
+            employeeCommand.Parameters.AddWithValue("@DepID", department.Id);
+        
+            var employeeReader = await employeeCommand.ExecuteReaderAsync();
+        
+            try
+            {
+                while (await employeeReader.ReadAsync())
+                {
+                    var employee = new Employee
+                    {
+                        EmpName = employeeReader.GetString(1),
+                        JobName = employeeReader.GetString(2),
+                        ManagerId = employeeReader.IsDBNull(3) ? (int?)null : employeeReader.GetInt32(3),
+                        Salary = employeeReader.GetDecimal(5),
+                        Commission = employeeReader.IsDBNull(6) ? (decimal?)null : employeeReader.GetDecimal(6),
+                        DepId = employeeReader.GetInt32(7)
+                    };
+                
+                    department.Employees.Add(employee);
+                }
+            }
+            finally
+            {
+                await employeeReader.CloseAsync();
+            }
+        }
+        
+        
 
         return departments;
     }
     
-    public Department? GetById(int id)
+    public GetOneDeptDto? GetById(int id)
     {
-        Department? department = null;
+        GetOneDeptDto? department = null;
         const string queryString = "SELECT * FROM Department WHERE DepID = @depId";
         using SqlConnection connection = new(_connectionString);
         SqlCommand command = new(queryString, connection);
@@ -59,9 +93,10 @@ public class DepartmentRepository: IDepartmentRepository
             {
                 while (reader.Read()) 
                 {
-                    department = new Department {
-                        DepName = reader.GetString(1),
-                        DepLocation = reader.GetString(1)
+                    department = new GetOneDeptDto {
+                        Id = reader.GetInt32(0),
+                        Name = reader.GetString(1),
+                        Location = reader.GetString(2)
                     };
                 } 
             }

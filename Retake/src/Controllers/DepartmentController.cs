@@ -18,7 +18,7 @@ public class DepartmentController : ControllerBase
     }
     
     [HttpGet]
-    public Task<IEnumerable<Department>> GetAll()
+    public Task<IEnumerable<GetDeptDto>> GetAll()
     {
         return _departmentRepository.GetAll();
     }
